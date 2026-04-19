@@ -1,14 +1,15 @@
 const { useState, useEffect, useMemo } = React;
 
-// --- Firebase Configuration (User: Please fill these from your Firebase Console) ---
+// --- Firebase Configuration ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyC9o4xQJyATIrwx4T-iK-Qdud0JfcmJRak",
+    authDomain: "viajando-x-el-mundo-e8ea2.firebaseapp.com",
+    databaseURL: "https://viajando-x-el-mundo-e8ea2-default-rtdb.firebaseio.com",
+    projectId: "viajando-x-el-mundo-e8ea2",
+    storageBucket: "viajando-x-el-mundo-e8ea2.firebasestorage.app",
+    messagingSenderId: "861380500997",
+    appId: "1:861380500997:web:ae38bf554b9060ed4b866c",
+    measurementId: "G-PJZK6TJ36H"
 };
 
 // Initialize Firebase (Check if already initialized for HMR)
