@@ -99,10 +99,18 @@ body {
     animation: bounce 0.4s ease-out;
 }
 
-.ticket-slot.taken {
+.ticket-slot.reserved, .ticket-slot.taken {
     background: rgba(100, 100, 100, 0.1) !important;
     color: rgba(224, 225, 221, 0.2);
     border-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+.ticket-slot.confirmed {
+    background: rgba(0, 174, 239, 0.1) !important;
+    color: var(--cyan);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px var(--shadow-cyan);
     cursor: not-allowed;
 }
 

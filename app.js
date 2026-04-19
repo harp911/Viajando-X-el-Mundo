@@ -127,14 +127,20 @@ const Grid = ({ tickets, selectedTickets, onSelect }) => {
                         const status = tickets[num] || 'available';
                         const isSelected = selectedTickets.includes(num);
                         
+                        let displayChar = num;
+                        let statusClass = '';
+                        if (status === 'reserved') { displayChar = '🔒'; statusClass = 'reserved'; }
+                        if (status === 'confirmed') { displayChar = '✈️'; statusClass = 'confirmed'; }
+                        if (status === 'taken') { displayChar = '🔒'; statusClass = 'taken'; } // Backwards compatibility
+                        
                         return (
                             <div 
                                 key={num}
-                                className={`ticket-slot ${status === 'taken' ? 'taken' : ''} ${isSelected ? 'selected' : ''}`}
+                                className={`ticket-slot ${statusClass} ${isSelected ? 'selected' : ''}`}
                                 onClick={() => status === 'available' && onSelect(num)}
-                                title={status === 'taken' ? 'No disponible' : 'Haz clic para reservar'}
+                                title={status === 'available' ? 'Haz clic para reservar' : `Estado: ${status}`}
                             >
-                                {status === 'taken' ? '🔒' : isSelected ? '✓' : num}
+                                {isSelected ? '✓' : displayChar}
                             </div>
                         );
                     })}
@@ -240,6 +246,35 @@ const AdminDashboard = ({ onClose }) => {
         alert('Sorteo actualizado');
     };
 
+    const handleStatusChange = (resId, newStatus, ticketList) => {
+        // Update reservation status
+        db.ref(`reservations/${resId}`).update({ status: newStatus });
+        // Update ticket statuses
+        const ticketStatus = newStatus === 'CONFIRMADO' ? 'confirmed' : 'reserved';
+        const ticketUpdates = {};
+        ticketList.forEach(num => {
+            ticketUpdates[num] = ticketStatus;
+        });
+        db.ref('tickets').update(ticketUpdates);
+    };
+
+    const handleReleaseTickets = (resId, ticketList) => {
+        if (!confirm('¿Estás seguro de liberar estos aviones? Volverán a estar disponibles para el público.')) return;
+        
+        const ticketUpdates = {};
+        ticketList.forEach(num => {
+            ticketUpdates[num] = 'available';
+        });
+        
+        db.ref('tickets').update(ticketUpdates);
+        db.ref(`reservations/${resId}`).update({ 
+            status: 'CANCELADO',
+            released_at: firebase.database.ServerValue.TIMESTAMP,
+            released_by: 'admin'
+        });
+        alert('Aviones liberados con éxito.');
+    };
+
     const handleIdentifyWinner = (fullNumber) => {
         const lastTwo = fullNumber.slice(-2);
         const winners = participants.filter(p => 
@@ -304,13 +339,25 @@ const AdminDashboard = ({ onClose }) => {
                                         <tr key={p.id} className="border-b border-white/5">
                                             <td className="py-3">{p.user?.name}</td>
                                             <td className="py-3 text-cyan">{p.user?.phone}</td>
-                                            <td className="py-3 font-bold">{Object.values(p.tickets || {}).join(', ')}</td>
-                                            <td className="py-3">
-                                                <select className="bg-navy border border-white/20 rounded p-1 text-[10px]">
-                                                    <option>RESERVADO</option>
-                                                    <option>CONFIRMADO</option>
-                                                    <option>CANCELADO</option>
+                                            <td className="py-3 font-bold">{p.tickets ? (Array.isArray(p.tickets) ? p.tickets.join(', ') : Object.values(p.tickets).join(', ')) : ''}</td>
+                                            <td className="py-3 flex items-center gap-2">
+                                                <select 
+                                                    value={p.status}
+                                                    onChange={(e) => handleStatusChange(p.id, e.target.value, p.tickets)}
+                                                    className="bg-navy border border-white/20 rounded p-1 text-[10px]"
+                                                >
+                                                    <option value="RESERVADO">RESERVADO</option>
+                                                    <option value="CONFIRMADO">CONFIRMADO</option>
+                                                    <option value="CANCELADO">CANCELADO</option>
                                                 </select>
+                                                {p.status !== 'CANCELADO' && (
+                                                    <button 
+                                                        onClick={() => handleReleaseTickets(p.id, p.tickets)}
+                                                        className="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-2 py-1 rounded text-[10px] transition-colors"
+                                                    >
+                                                        LIBERAR
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -319,8 +366,11 @@ const AdminDashboard = ({ onClose }) => {
                         </div>
                         <button 
                             onClick={() => {
-                                const headers = "Nombre,Telefono,Email,Tickets\n";
-                                const rows = participants.map(p => `${p.user?.name},${p.user?.phone},${p.user?.email},"${Object.values(p.tickets || {}).join(', ')}"`).join("\n");
+                                const headers = "Nombre,Telefono,Email,Tickets,Estado\n";
+                                const rows = participants.map(p => {
+                                    const ticketList = Array.isArray(p.tickets) ? p.tickets.join(', ') : (p.tickets ? Object.values(p.tickets).join(', ') : '');
+                                    return `${p.user?.name},${p.user?.phone},${p.user?.email},"${ticketList}",${p.status}`;
+                                }).join("\n");
                                 const blob = new Blob([headers + rows], { type: 'text/csv' });
                                 const url = window.URL.createObjectURL(blob);
                                 const a = document.createElement('a');
@@ -380,7 +430,7 @@ const AdminDashboard = ({ onClose }) => {
 // --- Main App Component ---
 
 const App = () => {
-    const [draw, setDraw] = useState({ destination: 'Cargando...', price: 20000, soldCount: 0 });
+    const [draw, setDraw] = useState({ destination: 'Cargando...', price: 0, soldCount: 0 });
     const [tickets, setTickets] = useState({});
     const [selectedTickets, setSelectedTickets] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -394,7 +444,13 @@ const App = () => {
 
         // Listen to ticket states
         db.ref('tickets').on('value', snap => {
-            if (snap.exists()) setTickets(snap.val());
+            if (snap.exists()) {
+                const ticketData = snap.val();
+                setTickets(ticketData);
+                // Calculate sold count dynamically
+                const taken = Object.values(ticketData).filter(s => s !== 'available').length;
+                setDraw(prev => ({ ...prev, soldCount: taken }));
+            }
         });
 
         return () => {
@@ -414,23 +470,51 @@ const App = () => {
     };
 
     const handleReserveSubmit = (userData) => {
-        // Here we would push to Firebase
         const reservationId = Date.now();
-        selectedTickets.forEach(num => {
-            db.ref(`tickets/${num}`).set('taken');
-            db.ref(`reservations/${reservationId}/tickets`).push(num);
+        const updates = {};
+        let conflictOccurred = false;
+
+        // Atomic transaction to reserve tickets
+        db.ref('tickets').transaction((currentTickets) => {
+            currentTickets = currentTickets || {};
+            // Check if all selected tickets are still available
+            for (let num of selectedTickets) {
+                if (currentTickets[num] && currentTickets[num] !== 'available' && currentTickets[num] !== 'selected') {
+                    conflictOccurred = true;
+                    return; // Abort transaction
+                }
+            }
+            
+            // If all available, mark as reserved
+            selectedTickets.forEach(num => {
+                currentTickets[num] = 'reserved';
+            });
+            return currentTickets;
+        }, (error, committed, snapshot) => {
+            if (error) {
+                alert('Ocurrió un error en el servidor. Inténtalo de nuevo.');
+            } else if (!committed) {
+                alert('¡Oops! Un avión que elegiste acaba de ser tomado. Por favor, revisa tu selección.');
+            } else {
+                // Transaction successful, create reservation record
+                db.ref(`reservations/${reservationId}`).set({
+                    user: userData,
+                    tickets: selectedTickets,
+                    status: 'RESERVADO',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                setIsModalOpen(false);
+                setSelectedTickets([]);
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#F5A800', '#00AEEF', '#FFFFFF']
+                });
+                alert('¡Tu reserva está lista! Revisa tu correo ✉️');
+            }
         });
-        db.ref(`reservations/${reservationId}/user`).set(userData);
-        
-        setIsModalOpen(false);
-        setSelectedTickets([]);
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#F5A800', '#00AEEF', '#FFFFFF']
-        });
-        alert('¡Tu reserva está lista! Revisa tu correo ✉️');
     };
 
     return (
