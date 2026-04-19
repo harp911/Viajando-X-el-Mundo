@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap');
+
+:root {
+    --bg-deep: #0D1B2A;
+    --gold: #F5A800;
+    --cyan: #00AEEF;
+    --navy-light: #1B263B;
+    --white: #E0E1DD;
+    --shadow-gold: rgba(245, 168, 0, 0.3);
+    --shadow-cyan: rgba(0, 174, 239, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-deep);
+    color: var(--white);
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Luxury Background Texture */
+.bg-texture {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(135deg, rgba(13, 27, 42, 0.95), rgba(27, 38, 59, 0.9)), url('travel_bg_texture_1776630724667.png');
+    background-size: cover;
+    background-position: center;
+    z-index: -2;
+}
+
+/* Floating Planes Animation */
+.airplane {
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.15;
+    filter: drop-shadow(0 0 5px var(--cyan));
+}
+
+@keyframes fly-diagonal {
+    0% { transform: translate(-100px, 100vh) rotate(-45deg); }
+    100% { transform: translate(110vw, -100px) rotate(-45deg); }
+}
+
+/* Typography styles */
+.font-viajando { font-family: 'Dancing Script', cursive; }
+.font-mundo { font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: 2px; }
+
+/* Grid Styles */
+.ticket-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .ticket-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.ticket-slot {
+    aspect-ratio: 1;
+    background: rgba(27, 38, 59, 0.6);
+    border: 1px solid rgba(0, 174, 239, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.ticket-slot:hover:not(.taken) {
+    border-color: var(--gold);
+    box-shadow: 0 0 15px var(--shadow-gold);
+    transform: translateY(-2px);
+    background: rgba(245, 168, 0, 0.1);
+}
+
+.ticket-slot.selected {
+    background: var(--gold) !important;
+    color: var(--bg-deep);
+    border-color: var(--gold);
+    box-shadow: 0 0 20px var(--gold);
+    animation: bounce 0.4s ease-out;
+}
+
+.ticket-slot.taken {
+    background: rgba(100, 100, 100, 0.1) !important;
+    color: rgba(224, 225, 221, 0.2);
+    border-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.pulse {
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(245, 168, 0, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(245, 168, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 168, 0, 0); }
+}
+
+/* Urgency Vibration */
+.animate-vibrate {
+    animation: vibrate 0.1s linear infinite;
+}
+
+@keyframes vibrate {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    20% { transform: translate(-1px, -1px) rotate(0.2deg); }
+    40% { transform: translate(1px, -1px) rotate(-0.2deg); }
+    60% { transform: translate(-1px, 1px) rotate(0.2deg); }
+    80% { transform: translate(1px, 1px) rotate(-0.1deg); }
+    100% { transform: translate(0px, 0px) rotate(0deg); }
+}
+
+.animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* Boarding Pass Modal */
+.boarding-pass {
+    background: #fff;
+    color: #333;
+    border-radius: 20px;
+    overflow: hidden;
+    max-width: 500px;
+    margin: auto;
+}
+
+.pass-header {
+    background: var(--bg-deep);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.neon-title {
+    color: var(--cyan);
+    text-shadow: 0 0 10px var(--cyan);
+}
+
+.text-gold { color: var(--gold); }
+.bg-gold { background-color: var(--gold); }
+.border-gold { border-color: var(--gold); }
