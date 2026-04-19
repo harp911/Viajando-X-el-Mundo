@@ -259,20 +259,50 @@ const AdminDashboard = ({ onClose }) => {
     };
 
     const handleReleaseTickets = (resId, ticketList) => {
-        if (!confirm('¿Estás seguro de liberar estos aviones? Volverán a estar disponibles para el público.')) return;
+        if (!confirm('¿Estás seguro de liberar TODOS los aviones de esta reserva?')) return;
         
         const ticketUpdates = {};
         ticketList.forEach(num => {
-            ticketUpdates[num] = 'available';
+            ticketUpdates[num] = null; // Setting to null removes the key
         });
         
         db.ref('tickets').update(ticketUpdates);
         db.ref(`reservations/${resId}`).update({ 
             status: 'CANCELADO',
             released_at: firebase.database.ServerValue.TIMESTAMP,
-            released_by: 'admin'
+            released_by: 'admin',
+            released_tickets: ticketList
         });
         alert('Aviones liberados con éxito.');
+    };
+
+    const handleReleaseSingleTicket = (resId, ticketNum, currentTicketList) => {
+        if (!confirm(`¿Liberar solo el avión ${ticketNum}?`)) return;
+
+        // 1. Mark ticket as available
+        db.ref(`tickets/${ticketNum}`).set(null);
+
+        // 2. Remove from reservation list
+        const updatedList = currentTicketList.filter(t => t !== ticketNum);
+        
+        const updates = {
+            tickets: updatedList,
+            last_edit: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        // 3. If no tickets left, cancel reservation
+        if (updatedList.length === 0) {
+            updates.status = 'CANCELADO';
+        }
+
+        // 4. Log the release in a history node
+        db.ref(`reservations/${resId}/logs`).push({
+            action: 'PARCIAL_RELEASE',
+            ticket: ticketNum,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        db.ref(`reservations/${resId}`).update(updates);
     };
 
     const handleIdentifyWinner = (fullNumber) => {
@@ -335,32 +365,53 @@ const AdminDashboard = ({ onClose }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {participants.map(p => (
-                                        <tr key={p.id} className="border-b border-white/5">
-                                            <td className="py-3">{p.user?.name}</td>
-                                            <td className="py-3 text-cyan">{p.user?.phone}</td>
-                                            <td className="py-3 font-bold">{p.tickets ? (Array.isArray(p.tickets) ? p.tickets.join(', ') : Object.values(p.tickets).join(', ')) : ''}</td>
-                                            <td className="py-3 flex items-center gap-2">
-                                                <select 
-                                                    value={p.status}
-                                                    onChange={(e) => handleStatusChange(p.id, e.target.value, p.tickets)}
-                                                    className="bg-navy border border-white/20 rounded p-1 text-[10px]"
-                                                >
-                                                    <option value="RESERVADO">RESERVADO</option>
-                                                    <option value="CONFIRMADO">CONFIRMADO</option>
-                                                    <option value="CANCELADO">CANCELADO</option>
-                                                </select>
-                                                {p.status !== 'CANCELADO' && (
-                                                    <button 
-                                                        onClick={() => handleReleaseTickets(p.id, p.tickets)}
-                                                        className="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-2 py-1 rounded text-[10px] transition-colors"
+                                    {participants.map(p => {
+                                        const tList = Array.isArray(p.tickets) ? p.tickets : (p.tickets ? Object.values(p.tickets) : []);
+                                        return (
+                                            <tr key={p.id} className="border-b border-white/5">
+                                                <td className="py-3">{p.user?.name}</td>
+                                                <td className="py-3 text-cyan">{p.user?.phone}</td>
+                                                <td className="py-3">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {tList.map(num => (
+                                                            <span key={num} className="group relative bg-white/10 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1">
+                                                                {num}
+                                                                {p.status !== 'CANCELADO' && (
+                                                                    <button 
+                                                                        onClick={() => handleReleaseSingleTicket(p.id, num, tList)}
+                                                                        className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-120 transition-all"
+                                                                        title="Liberar solo este avión"
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                )}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 flex items-center gap-2">
+                                                    <select 
+                                                        value={p.status}
+                                                        onChange={(e) => handleStatusChange(p.id, e.target.value, tList)}
+                                                        className="bg-navy border border-white/20 rounded p-1 text-[10px]"
                                                     >
-                                                        LIBERAR
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                        <option value="RESERVADO">RESERVADO</option>
+                                                        <option value="CONFIRMADO">CONFIRMADO</option>
+                                                        <option value="CANCELADO">CANCELADO</option>
+                                                    </select>
+                                                    {p.status !== 'CANCELADO' && tList.length > 1 && (
+                                                        <button 
+                                                            onClick={() => handleReleaseTickets(p.id, tList)}
+                                                            className="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-2 py-1 rounded text-[10px] transition-colors"
+                                                            title="Liberar todos los números de esta reserva"
+                                                        >
+                                                            LIBERAR TODO
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
