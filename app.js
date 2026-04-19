@@ -23,7 +23,10 @@ const db = firebase.database();
 const Header = () => (
     <header className="p-6 flex justify-between items-center relative z-10">
         <div className="flex flex-col">
-            <span className="font-viajando text-3xl text-cyan -mb-2">Viajando</span>
+            <div className="flex items-baseline gap-2 -mb-2">
+                <span className="font-viajando text-3xl text-cyan">Viajando</span>
+                <span className="font-viajando text-xl text-gold">por</span>
+            </div>
             <span className="font-mundo text-4xl text-white">EL MUNDO</span>
         </div>
         <div className="hidden md:flex gap-6 text-sm font-semibold tracking-widest text-cyan/60">
