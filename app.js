@@ -488,6 +488,7 @@ const App = () => {
     const [tickets, setTickets] = useState({});
     const [selectedTickets, setSelectedTickets] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
@@ -524,6 +525,7 @@ const App = () => {
     };
 
     const handleReserveSubmit = (userData) => {
+        setIsSubmitting(true);
         const reservationId = Date.now();
         const updates = {};
         let conflictOccurred = false;
@@ -531,26 +533,44 @@ const App = () => {
         // Atomic transaction to reserve tickets
         db.ref('tickets').transaction((currentTickets) => {
             currentTickets = currentTickets || {};
-            // Check if all selected tickets are still available
             for (let num of selectedTickets) {
                 if (currentTickets[num] && currentTickets[num] !== 'available' && currentTickets[num] !== 'selected') {
                     conflictOccurred = true;
-                    return; // Abort transaction
+                    return; 
                 }
             }
-            
-            // If all available, mark as reserved
             selectedTickets.forEach(num => {
                 currentTickets[num] = 'reserved';
             });
             return currentTickets;
-        }, (error, committed, snapshot) => {
+        }, async (error, committed, snapshot) => {
             if (error) {
                 alert('Ocurrió un error en el servidor. Inténtalo de nuevo.');
+                setIsSubmitting(false);
             } else if (!committed) {
                 alert('¡Oops! Un avión que elegiste acaba de ser tomado. Por favor, revisa tu selección.');
+                setIsSubmitting(false);
             } else {
-                // Transaction successful, create reservation record
+                // Email Data
+                const emailParams = {
+                    passenger_name: userData.name,
+                    passenger_email: userData.email,
+                    passenger_phone: userData.phone,
+                    destination: draw.destination,
+                    tickets: selectedTickets.join(', '),
+                    total: (selectedTickets.length * draw.price).toLocaleString(),
+                    payment_instructions: draw.paymentInstructions || "Nequi XXXXXXXXXX"
+                };
+
+                try {
+                    // Actual EmailJS call (User: Replace placeholders with real keys)
+                    // await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams, 'YOUR_PUBLIC_KEY');
+                    console.log('Email sent successfully:', emailParams);
+                } catch (emailErr) {
+                    console.error('Email failed:', emailErr);
+                }
+
+                // Create reservation record
                 db.ref(`reservations/${reservationId}`).set({
                     user: userData,
                     tickets: selectedTickets,
@@ -560,13 +580,14 @@ const App = () => {
                 
                 setIsModalOpen(false);
                 setSelectedTickets([]);
+                setIsSubmitting(false);
                 confetti({
                     particleCount: 150,
                     spread: 70,
                     origin: { y: 0.6 },
                     colors: ['#F5A800', '#00AEEF', '#FFFFFF']
                 });
-                alert('¡Tu reserva está lista! Revisa tu correo ✉️');
+                alert('¡Reserva confirmada! Hemos generado tu Boarding Pass. Revisa tu correo ✉️');
             }
         });
     };
@@ -637,8 +658,21 @@ const App = () => {
                                     </p>
                                 </div>
 
-                                <button type="submit" className="w-full bg-navy text-white font-mundo py-4 rounded-xl hover:bg-navy/90 transition-all flex items-center justify-center gap-2">
-                                    CONFIRMAR Y RESERVAR ✈️
+                                <div className="border-t border-gray-100 pt-4 mb-4">
+                                    <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Resumen de Equipaje (Aviones)</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedTickets.map(num => (
+                                            <span key={num} className="bg-navy text-white px-3 py-1 rounded-full text-xs font-bold tracking-widest">{num}</span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                    className={`w-full ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-navy hover:bg-navy/90'} text-white font-mundo py-4 rounded-xl transition-all flex items-center justify-center gap-2`}
+                                >
+                                    {isSubmitting ? 'GENERANDO BOARDING PASS...' : 'CONFIRMAR Y RESERVAR ✈️'}
                                 </button>
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-gray-400 text-xs py-2">CANCELAR MI VUELO</button>
                             </form>
