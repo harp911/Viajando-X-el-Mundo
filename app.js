@@ -563,9 +563,17 @@ const App = () => {
                 };
 
                 try {
-                    // Actual EmailJS call (User: Replace placeholders with real keys)
-                    // await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams, 'YOUR_PUBLIC_KEY');
-                    console.log('Email sent successfully:', emailParams);
+                    // --- EmailJS Configuration ---
+                    const SERVICE_ID = 'TU_SERVICE_ID_AQUI'; // Reemplaza esto con tu Service ID después de conectar Gmail
+                    const TEMPLATE_ID = 'template_v95dlt9';
+                    const PUBLIC_KEY = 'Arf4E_Rbtg6Zlg8DB';
+
+                    if (SERVICE_ID !== 'TU_SERVICE_ID_AQUI') {
+                        await emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY);
+                        console.log('Email sent successfully:', emailParams);
+                    } else {
+                        console.warn('EmailJS Service ID missing. Please configure Gmail in EmailJS.');
+                    }
                 } catch (emailErr) {
                     console.error('Email failed:', emailErr);
                 }
