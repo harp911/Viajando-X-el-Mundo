@@ -564,7 +564,7 @@ const App = () => {
                     destination: draw.destination,
                     tickets: selectedTickets.join(', '),
                     total: (selectedTickets.length * draw.price).toLocaleString(),
-                    payment_instructions: draw.paymentInstructions || "Nequi XXXXXXXXXX"
+                    payment_instructions: draw.paymentInstructions || "Cuenta de ahorros Bancolombia 54222265251, a nombre de Viajando X el Mundo."
                 };
 
                 try {
