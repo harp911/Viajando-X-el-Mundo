@@ -2,7 +2,7 @@ const { useState, useEffect, useMemo } = React;
 
 // Initialize EmailJS globally
 if (window.emailjs) {
-    emailjs.init("Arf4E_Rbtg6Zlg8DB");
+    emailjs.init("Arf4E_Rbtg6ZIg8DB");
 }
 
 // --- Firebase Configuration ---
@@ -571,7 +571,7 @@ const App = () => {
                     // --- EmailJS Configuration ---
                     const SERVICE_ID = 'service_7oi6yvm';
                     const TEMPLATE_ID = 'template_s4px7gu';
-                    const PUBLIC_KEY = 'Arf4E_Rbtg6Zlg8DB';
+                    const PUBLIC_KEY = 'Arf4E_Rbtg6ZIg8DB';
 
                     const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY);
                     console.log('Email sent successfully!', response.status, response.text);
