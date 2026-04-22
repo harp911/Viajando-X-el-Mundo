@@ -1,5 +1,10 @@
 const { useState, useEffect, useMemo } = React;
 
+// Initialize EmailJS globally
+if (window.emailjs) {
+    emailjs.init("Arf4E_Rbtg6Zlg8DB");
+}
+
 // --- Firebase Configuration ---
 const firebaseConfig = {
     apiKey: "AIzaSyC9o4xQJyATIrwx4T-iK-Qdud0JfcmJRak",
@@ -568,10 +573,13 @@ const App = () => {
                     const TEMPLATE_ID = 'template_s4px7gu';
                     const PUBLIC_KEY = 'Arf4E_Rbtg6Zlg8DB';
 
-                    await emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY);
-                    console.log('Email sent successfully:', emailParams);
+                    const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY);
+                    console.log('Email sent successfully!', response.status, response.text);
                 } catch (emailErr) {
-                    console.error('Email failed:', emailErr);
+                    console.error('Detailed Email Error:', emailErr);
+                    // More descriptive alert for the user
+                    const errorMsg = emailErr?.text || emailErr?.message || JSON.stringify(emailErr);
+                    alert(`El sistema reservó tus aviones pero hubo un problema enviando el correo: ${errorMsg}`);
                 }
 
                 // Create reservation record
