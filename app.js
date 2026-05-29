@@ -321,6 +321,21 @@ const AdminDashboard = ({ onClose }) => {
         setWinnerModal({ number: lastTwo, winners });
     };
 
+    const handleResetLottery = async () => {
+        if (!confirm("⚠️ ¡ADVERTENCIA CRÍTICA! ⚠️\n\nEsta acción borrará permanentemente todos los participantes registrados y liberará los 100 números (aviones) para iniciar un nuevo sorteo.\n\n¿Estás completamente seguro de que deseas continuar?")) return;
+        
+        if (!confirm("¿CONFIRMAS COMPLETAMENTE EL REINICIO?\n\nEsta acción eliminará todos los registros y NO se puede deshacer. Presiona Aceptar para continuar.")) return;
+
+        try {
+            await db.ref('tickets').set(null);
+            await db.ref('reservations').set(null);
+            alert("✅ ¡Sorteo reiniciado con éxito! Todos los aviones están libres y no hay registros previos.");
+        } catch (err) {
+            console.error(err);
+            alert("Hubo un error al reiniciar el sorteo: " + err.message);
+        }
+    };
+
     if (!authenticated) {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/95">
@@ -358,6 +373,15 @@ const AdminDashboard = ({ onClose }) => {
                             <textarea className="w-full bg-white/5 p-2 rounded text-sm h-24" placeholder="Instrucciones de Pago" value={drawForm.paymentInstructions || ''} onChange={e => setDrawForm({...drawForm, paymentInstructions: e.target.value})} />
                             <button className="w-full bg-cyan text-navy font-bold py-2 rounded">GUARDAR</button>
                         </form>
+                        <div className="border-t border-white/10 mt-6 pt-6">
+                            <h4 className="text-xs uppercase text-red-500 font-bold mb-2">Zona de Peligro</h4>
+                            <button 
+                                onClick={handleResetLottery}
+                                className="w-full bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/30 font-bold py-2 rounded transition-colors text-sm"
+                            >
+                                REINICIAR SORTEO 🔄
+                            </button>
+                        </div>
                     </div>
 
                     <div className="md:col-span-2 bg-white/5 p-6 rounded-2xl border border-white/10">
