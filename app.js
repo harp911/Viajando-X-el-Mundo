@@ -489,7 +489,7 @@ const AdminDashboard = ({ onClose }) => {
 // --- Main App Component ---
 
 const App = () => {
-    const [draw, setDraw] = useState({ destination: 'Cargando...', price: 0, soldCount: 0 });
+    const [draw, setDraw] = useState({ destination: 'La Guajira', price: 50000, soldCount: 0 });
     const [tickets, setTickets] = useState({});
     const [selectedTickets, setSelectedTickets] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -561,9 +561,9 @@ const App = () => {
                     passenger_name: userData.name,
                     passenger_email: userData.email,
                     passenger_phone: userData.phone,
-                    destination: draw.destination,
+                    destination: draw.destination || 'La Guajira',
                     tickets: selectedTickets.join(', '),
-                    total: (selectedTickets.length * draw.price).toLocaleString(),
+                    total: (selectedTickets.length * (draw.price || 50000)).toLocaleString(),
                     payment_instructions: draw.paymentInstructions || "Cuenta de ahorros Bancolombia 54222265251, a nombre de Viajando X el Mundo."
                 };
 
@@ -613,7 +613,7 @@ const App = () => {
             
             <SidebarPanel 
                 selectedTickets={selectedTickets} 
-                price={draw.price} 
+                price={draw.price || 50000} 
                 onReserve={() => setIsModalOpen(true)}
             />
 
@@ -627,11 +627,11 @@ const App = () => {
                         <div className="pass-header">
                             <div>
                                 <p className="text-[10px] tracking-widest text-cyan uppercase mb-1">Vuelo Sorteo</p>
-                                <h3 className="font-mundo text-xl">{draw.destination}</h3>
+                                <h3 className="font-mundo text-xl">{draw.destination || 'La Guajira'}</h3>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] tracking-widest text-white/40 uppercase mb-1">Total</p>
-                                <p className="text-gold font-bold">${(selectedTickets.length * draw.price).toLocaleString()} COP</p>
+                                <p className="text-gold font-bold">${(selectedTickets.length * (draw.price || 50000)).toLocaleString()} COP</p>
                             </div>
                         </div>
                         <div className="p-6">
@@ -666,7 +666,7 @@ const App = () => {
                                 <div className="bg-gray-50 p-4 rounded-lg text-[11px] mb-4">
                                     <p className="font-bold mb-1">INSTRUCCIONES DE PAGO:</p>
                                     <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                                        {draw.paymentInstructions || "Realiza tu transferencia a Nequi XXXXXXXXXX a nombre de Viajando X el Mundo. Envía el comprobante a WhatsApp."}
+                                        {draw.paymentInstructions || "Para asegurar tu cupo, realiza el pago a la cuenta de ahorros Bancolombia 54222265251, a nombre de Viajando X el Mundo."}
                                     </p>
                                 </div>
 
