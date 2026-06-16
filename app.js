@@ -1,4 +1,6 @@
+/** @jsxRuntime classic */
 const { useState, useEffect, useMemo } = React;
+
 
 // Initialize EmailJS globally
 if (window.emailjs) {
