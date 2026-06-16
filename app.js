@@ -321,19 +321,20 @@ const AdminDashboard = ({ onClose }) => {
         setWinnerModal({ number: lastTwo, winners });
     };
 
-    const handleResetLottery = async () => {
+    const handleResetLottery = () => {
         if (!confirm("⚠️ ¡ADVERTENCIA CRÍTICA! ⚠️\n\nEsta acción borrará permanentemente todos los participantes registrados y liberará los 100 números (aviones) para iniciar un nuevo sorteo.\n\n¿Estás completamente seguro de que deseas continuar?")) return;
         
         if (!confirm("¿CONFIRMAS COMPLETAMENTE EL REINICIO?\n\nEsta acción eliminará todos los registros y NO se puede deshacer. Presiona Aceptar para continuar.")) return;
 
-        try {
-            await db.ref('tickets').set(null);
-            await db.ref('reservations').set(null);
-            alert("✅ ¡Sorteo reiniciado con éxito! Todos los aviones están libres y no hay registros previos.");
-        } catch (err) {
-            console.error(err);
-            alert("Hubo un error al reiniciar el sorteo: " + err.message);
-        }
+        db.ref('tickets').set(null)
+            .then(() => db.ref('reservations').set(null))
+            .then(() => {
+                alert("✅ ¡Sorteo reiniciado con éxito! Todos los aviones están libres y no hay registros previos.");
+            })
+            .catch((err) => {
+                console.error(err);
+                alert("Hubo un error al reiniciar el sorteo: " + err.message);
+            });
     };
 
     if (!authenticated) {
@@ -572,7 +573,7 @@ const App = () => {
                 currentTickets[num] = 'reserved';
             });
             return currentTickets;
-        }, async (error, committed, snapshot) => {
+        }, (error, committed, snapshot) => {
             if (error) {
                 alert('Ocurrió un error en el servidor. Inténtalo de nuevo.');
                 setIsSubmitting(false);
@@ -591,39 +592,44 @@ const App = () => {
                     payment_instructions: draw.paymentInstructions || "Cuenta de ahorros Bancolombia 54222265251, a nombre de Viajando X el Mundo."
                 };
 
-                try {
-                    // --- EmailJS Configuration ---
-                    const SERVICE_ID = 'service_7oi6yvm';
-                    const TEMPLATE_ID = 'template_s4px7gu';
-                    const PUBLIC_KEY = 'Arf4E_Rbtg6ZIg8DB';
+                const finalizeReservation = () => {
+                    // Create reservation record
+                    db.ref(`reservations/${reservationId}`).set({
+                        user: userData,
+                        tickets: selectedTickets,
+                        status: 'RESERVADO',
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    setIsModalOpen(false);
+                    setSelectedTickets([]);
+                    setIsSubmitting(false);
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#F5A800', '#00AEEF', '#FFFFFF']
+                    });
+                    alert('¡Reserva confirmada! Hemos generado tu Boarding Pass. Revisa tu correo ✉️');
+                };
 
-                    const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY);
-                    console.log('Email sent successfully!', response.status, response.text);
-                } catch (emailErr) {
-                    console.error('Detailed Email Error:', emailErr);
-                    // More descriptive alert for the user
-                    const errorMsg = emailErr?.text || emailErr?.message || JSON.stringify(emailErr);
-                    alert(`El sistema reservó tus aviones pero hubo un problema enviando el correo: ${errorMsg}`);
-                }
+                // --- EmailJS Configuration ---
+                const SERVICE_ID = 'service_7oi6yvm';
+                const TEMPLATE_ID = 'template_s4px7gu';
+                const PUBLIC_KEY = 'Arf4E_Rbtg6ZIg8DB';
 
-                // Create reservation record
-                db.ref(`reservations/${reservationId}`).set({
-                    user: userData,
-                    tickets: selectedTickets,
-                    status: 'RESERVADO',
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-                
-                setIsModalOpen(false);
-                setSelectedTickets([]);
-                setIsSubmitting(false);
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#F5A800', '#00AEEF', '#FFFFFF']
-                });
-                alert('¡Reserva confirmada! Hemos generado tu Boarding Pass. Revisa tu correo ✉️');
+                emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY)
+                    .then((response) => {
+                        console.log('Email sent successfully!', response.status, response.text);
+                        finalizeReservation();
+                    })
+                    .catch((emailErr) => {
+                        console.error('Detailed Email Error:', emailErr);
+                        // More descriptive alert for the user
+                        const errorMsg = emailErr?.text || emailErr?.message || JSON.stringify(emailErr);
+                        alert(`El sistema reservó tus aviones pero hubo un problema enviando el correo: ${errorMsg}`);
+                        finalizeReservation();
+                    });
             }
         });
     };
