@@ -140,28 +140,47 @@ const Hero = ({ draw }) => {
     );
 };
 
-const Grid = ({ tickets, selectedTickets, onSelect }) => {
+const Grid = ({ tickets, selectedTickets, onSelect, draw = {} }) => {
     const availableCount = Array.from({ length: 100 }).filter(
         (_, i) => (tickets[i.toString().padStart(2, '0')] || 'available') === 'available'
     ).length;
 
+    const destName = (draw.destination || 'CURAZAO').toUpperCase();
+    const destImage = draw.imageUrl || (destName.includes('CURA') || !draw.destination ? 'curacao_destination.jpg' : null);
+
     return (
-        <section id="grid-section" className="px-6 py-20 bg-navy/40 backdrop-blur-md border-y border-white/5">
-            <div className="max-w-5xl mx-auto text-center">
-                <h2 className="text-4xl font-mundo mb-2 italic">La Pista de Despegue</h2>
-                <p className="text-gold mb-2 italic">Más aviones = más probabilidades de ganar ✈️</p>
+        <section id="grid-section" className="px-6 py-20 relative overflow-hidden border-y border-white/10">
+            {/* Background Destination Image behind Grid */}
+            {destImage && (
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src={destImage} 
+                        alt="Fondo Destino" 
+                        className="w-full h-full object-cover filter brightness-[0.35] contrast-125 saturate-125 scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-navy/85 via-navy/70 to-navy/90 backdrop-blur-[1px]"></div>
+                </div>
+            )}
+
+            <div className="max-w-5xl mx-auto text-center relative z-10">
+                <h2 className="text-4xl md:text-5xl font-mundo mb-2 italic text-white drop-shadow-md">
+                    La Pista de Despegue
+                </h2>
+                <p className="text-gold mb-4 italic text-lg font-semibold drop-shadow">
+                    Selecciona tus números rumbo a {(draw.destination || 'CURAZAO').toUpperCase()} ✈️
+                </p>
                 
                 {availableCount < 20 && (
-                    <p className={`text-red-500 font-bold mb-4 animate-pulse uppercase tracking-widest text-sm`}>
+                    <p className="text-red-400 font-bold mb-4 animate-pulse uppercase tracking-widest text-sm drop-shadow">
                         ⚡ ¡Solo quedan {availableCount} aviones!
                     </p>
                 )}
 
-                <div className="bg-navy/60 p-4 rounded-lg mb-10 border border-cyan/20 inline-block text-sm text-cyan/80">
+                <div className="bg-navy/80 backdrop-blur-md p-4 rounded-xl mb-10 border border-cyan/30 inline-block text-sm text-cyan shadow-xl">
                     <p>Cada número representa las dos últimas cifras del número ganador de la Lotería de Medellín.</p>
                 </div>
 
-                <div className={`ticket-grid ${availableCount < 10 ? 'animate-vibrate' : ''}`}>
+                <div className={`ticket-grid bg-navy/60 p-6 md:p-8 rounded-3xl backdrop-blur-xl border border-white/20 shadow-2xl ${availableCount < 10 ? 'animate-vibrate' : ''}`}>
                     {Array.from({ length: 100 }).map((_, i) => {
                         const num = i.toString().padStart(2, '0');
                         const status = tickets[num] || 'available';
@@ -171,7 +190,7 @@ const Grid = ({ tickets, selectedTickets, onSelect }) => {
                         let statusClass = '';
                         if (status === 'reserved') { displayChar = '🔒'; statusClass = 'reserved'; }
                         if (status === 'confirmed') { displayChar = '✈️'; statusClass = 'confirmed'; }
-                        if (status === 'taken') { displayChar = '🔒'; statusClass = 'taken'; } // Backwards compatibility
+                        if (status === 'taken') { displayChar = '🔒'; statusClass = 'taken'; }
                         
                         return (
                             <div 
@@ -678,7 +697,7 @@ const App = () => {
         <div className="relative min-h-screen pb-24">
             <Header />
             <Hero draw={draw} />
-            <Grid tickets={tickets} selectedTickets={selectedTickets} onSelect={toggleTicket} />
+            <Grid tickets={tickets} selectedTickets={selectedTickets} onSelect={toggleTicket} draw={draw} />
             <HowItWorks />
             
             <SidebarPanel 
