@@ -64,21 +64,53 @@ const Hero = ({ draw }) => {
         return () => clearInterval(timer);
     }, [draw.date]);
 
+    // Resolve destination name and image with fallback to Curacao
+    const destName = (draw.destination || 'CURAZAO').toUpperCase();
+    const destImage = draw.imageUrl || (destName.includes('CURA') || !draw.destination ? 'curacao_destination.jpg' : null);
+
     return (
-        <section className="px-6 py-12 text-center relative z-10 max-w-4xl mx-auto">
-            <div className="mb-4 inline-block px-4 py-1 rounded-full border border-cyan/30 bg-cyan/10 text-cyan text-xs tracking-widest">
-                PRÓXIMO DESTINO
+        <section className="px-6 py-12 text-center relative z-10 max-w-5xl mx-auto">
+            <div className="mb-4 inline-block px-4 py-1 rounded-full border border-cyan/30 bg-cyan/10 text-cyan text-xs tracking-widest uppercase">
+                ✈️ PRÓXIMO DESTINO DE ENSUEÑO
             </div>
-            <h1 className="text-6xl md:text-8xl font-mundo neon-title mb-6 animate-pulse">
-                {draw.destination || "CARGANDO..."}
-            </h1>
-            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-                {draw.description || "Prepárate para la aventura de tu vida."}
-            </p>
             
+            <h1 className="text-6xl md:text-8xl font-mundo neon-title mb-4 animate-pulse">
+                {draw.destination || "CURAZAO"}
+            </h1>
+            
+            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto leading-relaxed">
+                {draw.description || "¡Vive una experiencia paradisíaca en la joya del Caribe! Playas de agua turquesa, arquitectura colonial de lujo y momentos inolvidables."}
+            </p>
+
+            {/* Destination Reference Image Card */}
+            {destImage && (
+                <div className="relative max-w-3xl mx-auto mb-10 rounded-3xl overflow-hidden border-2 border-gold/40 shadow-2xl shadow-gold/20 group">
+                    <img 
+                        src={destImage} 
+                        alt={`Destino ${draw.destination || 'Curazao'}`} 
+                        className="w-full h-72 md:h-96 object-cover transform group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-transparent"></div>
+                    <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end text-left">
+                        <div>
+                            <span className="bg-gold text-navy font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                                🏝️ Destino Oficial del Sorteo
+                            </span>
+                            <h3 className="text-2xl md:text-3xl font-mundo text-white mt-2 drop-shadow-md">
+                                {draw.destination || 'CURAZAO'} — ISLA CARIBEÑA DE LUJO
+                            </h3>
+                        </div>
+                        <div className="hidden sm:block text-right">
+                            <span className="text-cyan text-xs font-semibold block uppercase">Premio Incluye</span>
+                            <span className="text-gold font-bold text-sm">VUELOS + ESTADÍA DE ENSUEÑO</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-center gap-4 mb-10">
                 {['d', 'h', 'm', 's'].map(unit => (
-                    <div key={unit} className="w-20 h-24 bg-navy/80 border border-white/10 rounded-xl flex flex-col items-center justify-center">
+                    <div key={unit} className="w-20 h-24 bg-navy/80 border border-white/10 rounded-xl flex flex-col items-center justify-center shadow-lg">
                         <span className="text-3xl font-mundo text-gold">{timeLeft[unit]}</span>
                         <span className="text-[10px] text-white/40 uppercase tracking-tighter">{unit === 'd' ? 'Días' : unit === 'h' ? 'Hrs' : unit === 'm' ? 'Min' : 'Seg'}</span>
                     </div>
@@ -100,9 +132,9 @@ const Hero = ({ draw }) => {
 
             <button 
                 onClick={() => document.getElementById('grid-section').scrollIntoView({ behavior: 'smooth' })}
-                className="pulse bg-gold text-navy font-mundo px-10 py-4 rounded-full hover:scale-105 transition-transform"
+                className="pulse bg-gold text-navy font-mundo px-10 py-4 rounded-full hover:scale-105 transition-transform shadow-xl shadow-gold/30 font-extrabold text-lg"
             >
-                ¡QUIERO MI AVIÓN!
+                ¡QUIERO MI AVIÓN A {(draw.destination || 'CURAZAO').toUpperCase()}! ✈️
             </button>
         </section>
     );
@@ -368,10 +400,12 @@ const AdminDashboard = ({ onClose }) => {
                     <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
                         <h3 className="text-xs uppercase opacity-50 mb-2">Configurar Sorteo</h3>
                         <form onSubmit={handleUpdateDraw} className="space-y-4">
-                            <input className="w-full bg-white/5 p-2 rounded text-sm" placeholder="Destino" value={drawForm.destination || ''} onChange={e => setDrawForm({...drawForm, destination: e.target.value})} />
+                            <input className="w-full bg-white/5 p-2 rounded text-sm" placeholder="Destino (Ej. CURAZAO)" value={drawForm.destination || ''} onChange={e => setDrawForm({...drawForm, destination: e.target.value})} />
+                            <input className="w-full bg-white/5 p-2 rounded text-sm" placeholder="URL o Nombre de Imagen de Referencia" value={drawForm.imageUrl || ''} onChange={e => setDrawForm({...drawForm, imageUrl: e.target.value})} />
+                            <textarea className="w-full bg-white/5 p-2 rounded text-sm h-16" placeholder="Descripción del Destino" value={drawForm.description || ''} onChange={e => setDrawForm({...drawForm, description: e.target.value})} />
                             <input className="w-full bg-white/5 p-2 rounded text-sm" type="date" value={drawForm.date || ''} onChange={e => setDrawForm({...drawForm, date: e.target.value})} />
                             <input className="w-full bg-white/5 p-2 rounded text-sm" placeholder="Precio COP" value={drawForm.price || ''} onChange={e => setDrawForm({...drawForm, price: e.target.value})} />
-                            <textarea className="w-full bg-white/5 p-2 rounded text-sm h-24" placeholder="Instrucciones de Pago" value={drawForm.paymentInstructions || ''} onChange={e => setDrawForm({...drawForm, paymentInstructions: e.target.value})} />
+                            <textarea className="w-full bg-white/5 p-2 rounded text-sm h-20" placeholder="Instrucciones de Pago" value={drawForm.paymentInstructions || ''} onChange={e => setDrawForm({...drawForm, paymentInstructions: e.target.value})} />
                             <button className="w-full bg-cyan text-navy font-bold py-2 rounded">GUARDAR</button>
                         </form>
                         <div className="border-t border-white/10 mt-6 pt-6">
@@ -514,7 +548,13 @@ const AdminDashboard = ({ onClose }) => {
 // --- Main App Component ---
 
 const App = () => {
-    const [draw, setDraw] = useState({ destination: 'La Guajira', price: 50000, soldCount: 0 });
+    const [draw, setDraw] = useState({ 
+        destination: 'CURAZAO', 
+        imageUrl: 'curacao_destination.jpg',
+        description: '¡Vive una experiencia paradisíaca en la joya del Caribe! Playas de agua turquesa, arquitectura colonial de lujo y momentos inolvidables.',
+        price: 50000, 
+        soldCount: 0 
+    });
     const [tickets, setTickets] = useState({});
     const [selectedTickets, setSelectedTickets] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -654,11 +694,18 @@ const App = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm">
                     <div className="boarding-pass shadow-2xl animate-fade-in w-full max-w-lg">
-                        <div className="pass-header">
+                        <div className="pass-header flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] tracking-widest text-cyan uppercase mb-1">Vuelo Sorteo</p>
-                                <h3 className="font-mundo text-xl">{draw.destination || 'La Guajira'}</h3>
+                                <h3 className="font-mundo text-xl">{draw.destination || 'CURAZAO'}</h3>
                             </div>
+                            {(draw.imageUrl || (draw.destination || 'CURAZAO').toUpperCase().includes('CURA')) && (
+                                <img 
+                                    src={draw.imageUrl || 'curacao_destination.jpg'} 
+                                    alt="Destino" 
+                                    className="w-16 h-12 object-cover rounded border border-cyan/40 shadow-sm"
+                                />
+                            )}
                             <div className="text-right">
                                 <p className="text-[10px] tracking-widest text-white/40 uppercase mb-1">Total</p>
                                 <p className="text-gold font-bold">${(selectedTickets.length * (draw.price || 50000)).toLocaleString()} COP</p>
